@@ -43,7 +43,7 @@ get '/auth/:provider/callback' do
 end
 
 get '/profile' do
-  current_user = User.find(id: session['user'])
+  current_user = User.find(session['user'])
   current_user.update(count: session['user_count']) if session['user_count'] > current_user.count
   current_score = session['user_count']
   sort_users = User.order(count: :desc)
@@ -66,4 +66,9 @@ get '/step' do
   result = DATA[session['number']]
   question = result["question"]
   erb :step1, locals: { question: question, number: session['number'] }
+end
+
+get '/logout' do
+    session = {}
+    redirect '/'
 end

@@ -1,6 +1,7 @@
 <h1><% number %></h1><p>
-<% for question in question.split("\n")  %>
-  <br><%= question %>
+<% question.split("\n").each do |line|  %>
+  <br><%= line %>
+<% end %>
 <form action="/submit" method="POST">
 <input type="text" name="user_input" placeholder="Enter ur answer" />
 <input type="submit" value="Submit" >
