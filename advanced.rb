@@ -3,12 +3,14 @@ require 'sinatra/activerecord'
 require 'rest_client'
 require 'json'
 require './models/user.rb'
+require './helpers.rb'
 require 'dotenv/load'
 require 'omniauth'
 require 'omniauth-github'
 require 'rake'
 require 'pry'
 require 'yaml'
+require 'jwt'
 
 CLIENT_ID = ENV['CLIENT_ID']
 CLIENT_SECRET = ENV['CLIENT_SECRET_ID']
@@ -26,49 +28,58 @@ use OmniAuth::Builder do
 end
 
 get '/' do
-  session['number'] = 0
-  session['user_count'] = 0
+  protected!
+  redirect '/step'
+end
+
+get '/login' do
   erb :login
 end
 
 get '/auth/:provider/callback' do
+  token = request.env['omniauth.auth'][:credentials][:token]
   info = request.env['omniauth.auth'][:info]
   name = info[:name] ? info[:name] : info[:nickname]
   git_id = request.env['omniauth.auth'][:uid]
   create = { name: name, gitid: git_id }
   current_user = User.find_or_create_by(gitid: git_id) 
   current_user.update(name: name) if current_user.name != name
-  session['user'] = current_user.id
+  create_session(current_user.id, token)
   redirect'/step'
 end
 
 get '/profile' do
-  current_user = User.find(session['user'])
-  current_user.update(count: session['user_count']) if session['user_count'] > current_user.count
-  current_score = session['user_count']
+  current_user_id = JWT.decode(session['user'], nil, false)[0].to_i
+  current_user = User.find(current_user_id)
+  current_count = JWT.decode(session['user_count'], nil, false)[0].to_i
+  current_user.update(count: current_count) if current_count > current_user.count
   sort_users = User.order(count: :desc)
-  session['number'] = 0
-  session['user_count'] = 0
-  erb :profile, locals: { user: current_user, users: sort_users, current_score: current_score }
+  refresh_step
+  erb :profile, locals: { user: current_user, users: sort_users, current_score: current_count }
 end
 
 post '/submit' do
-  current_step = session['number']
+  current_step = JWT.decode(session['number'], nil, false)[0].to_i
   result = DATA[current_step]
   right_answer = result["right_answer"]
-  session['user_count'] += 1 if params[:user_input] == right_answer
-  session['number'] += 1
-  redirect '/profile' if session['number'] == DATA.size   
+  current_count = JWT.decode(session['user_count'], nil, false)[0].to_i
+  current_count += 1 if params[:user_input] == right_answer
+  current_step += 1
+  session['number'] = JWT.encode(current_step.to_s, nil, 'none')
+  session['user_count'] = JWT.encode(current_count.to_s, nil, false)
+  redirect '/profile' if current_step == DATA.size   
   redirect'/step'
 end
 
 get '/step' do
-  result = DATA[session['number']]
+  protected!
+  current_step = JWT.decode(session['number'], nil, false)[0].to_i
+  result = DATA[current_step]
   question = result["question"]
-  erb :step1, locals: { question: question, number: session['number'] }
+  erb :step1, locals: { question: question, number: current_step }
 end
 
 get '/logout' do
-    session = {}
+    destroy_session
     redirect '/'
 end
