@@ -1,0 +1,19 @@
+
+<pre><%= "#{user.name}, your score is #{current_score}! Your best is #{user.count}" %></pre>
+<h3>Result table</h3>
+<table border="1">
+  <tr>
+    <th>Name</th>
+    <th>Gitid</th>
+    <th>Hightscore</th>
+  </tr>
+  <% users.each do |user| %>
+    <tr>
+      <td><%= "#{user.name}" %></td>
+      <td><%= "#{user.gitid}" %></td>
+      <td><%= "#{user.count}" %></td>
+    </tr>
+  <% end %>
+</table>
+<a href="/step">Back to Home</a>
+<a href="/logout">Logout</a>

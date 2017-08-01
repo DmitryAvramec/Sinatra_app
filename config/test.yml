@@ -1,0 +1,10 @@
+0: 
+  question: 
+    "i = 2\ns = 5\ns += i == 3 ? i*s : i if i < 2\ns=>? "
+  right_answer: 
+    "5"
+1: 
+  question: 
+    "def foo\n yield(1)\nend\n number = 99 foo { |number| puts \'number равно #{number}\' }  => number равно ???"
+  right_answer: 
+    "1"
