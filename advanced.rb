@@ -35,11 +35,11 @@ use OmniAuth::Builder do
 end
 
 helpers do
-  def cript text
+  def crypt text
     JWT.encode text.to_s, settings.rsa_private, 'RS256'
   end
 
-  def decript text
+  def decrypt text
     JWT.decode(text, settings.rsa_public, true, { :algorithm => 'RS256' })[0].to_i
   end
 
@@ -49,15 +49,15 @@ helpers do
   end
 
   def create_session user_id, token
-    session['user_count'] = cript('0')
-    session['number'] = cript('0')
-    session['user'] = cript(user_id.to_s)
-    session['token'] = cript(token.to_s)
+    session['user_count'] = crypt('0')
+    session['number'] = crypt('0')
+    session['user'] = crypt(user_id.to_s)
+    session['token'] = crypt(token.to_s)
   end
 
   def refresh_step
-    session['user_count'] = cript('0')
-    session['number'] = cript('0')
+    session['user_count'] = crypt('0')
+    session['number'] = crypt('0')
   end
 
   def destroy_session
@@ -87,9 +87,9 @@ get '/auth/:provider/callback' do
 end
 
 get '/profile' do
-  current_user_id = decript(session['user'])
+  current_user_id = decrypt(session['user'])
   current_user = User.find(current_user_id)
-  current_count = decript(session['user_count'])
+  current_count = decrypt(session['user_count'])
   current_user.update(count: current_count) if current_count > current_user.count
   sort_users = User.order(count: :desc)
   refresh_step
@@ -97,21 +97,21 @@ get '/profile' do
 end
 
 post '/submit' do
-  current_step = decript(session['number'])
+  current_step = decrypt(session['number'])
   result = DATA[current_step]
   right_answer = result["right_answer"]
-  current_count = decript(session['user_count'])
+  current_count = decrypt(session['user_count'])
   current_count += 1 if params[:user_input] == right_answer
   current_step += 1
-  session['number'] = cript(current_step)
-  session['user_count'] = cript(current_count)
+  session['number'] = crypt(current_step)
+  session['user_count'] = crypt(current_count)
   redirect '/profile' if current_step == DATA.size   
   redirect'/step'
 end
 
 get '/step' do
   protected!
-  current_step = decript(session['number'])
+  current_step = decrypt(session['number'])
   result = DATA[current_step]
   question = result["question"]
   erb :step1, locals: { question: question, number: current_step }
